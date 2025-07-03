@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System filtracji komory dygestoryjnej - wizualizacja 3D</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Interaktywna wizualizacja 3D systemu filtracji komory dygestoryjnej z trzema etapami oczyszczania powietrza">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Filtracja 3D">
+    <meta name="msapplication-TileColor" content="#4CAF50">
+    <meta name="msapplication-TileImage" content="./icon-144x144.png">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="./manifest.json">
+    
+    <!-- Ikony dla różnych platform -->
+    <link rel="icon" type="image/png" sizes="32x32" href="./icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./icon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="./icon-180x180.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="./icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="./icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="./icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="./icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="./icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="./icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="./icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="57x57" href="./icon-57x57.png">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            background: #1a1a1a;
+        }
+        
+        #canvas-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 350px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #info-panel h2 {
+            margin-top: 0;
+            color: #4CAF50;
+            font-size: 1.4em;
+        }
+        
+        .filter-info {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-info.active {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4CAF50;
+        }
+        
+        .filter-name {
+            font-weight: bold;
+            color: #81C784;
+            margin-bottom: 5px;
+        }
+        
+        .filter-desc {
+            font-size: 0.9em;
+            line-height: 1.4;
+            color: #ddd;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 30px;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        #legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            font-size: 0.9em;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border-radius: 3px;
+        }
+        
+        #flow-info {
+            color: #81C784;
+            font-size: 0.9em;
+        }
+        
+        /* PWA Install Button */
+        #install-btn {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+            z-index: 1000;
+        }
+        
+        #install-btn:hover {
+            background: #1976D2;
+        }
+        
+        /* Status połączenia */
+        #connection-status {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 152, 0, 0.9);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            display: none;
+        }
+        
+        #connection-status.offline {
+            background: rgba(244, 67, 54, 0.9);
+        }
+        
+        #connection-status.online {
+            background: rgba(76, 175, 80, 0.9);
+        }
+        
+        /* Responsywność */
+        @media (max-width: 768px) {
+            #info-panel {
+                max-width: 280px;
+                padding: 15px;
+            }
+            
+            #controls {
+                bottom: 10px;
+                padding: 10px 20px;
+                gap: 10px;
+            }
+            
+            button {
+                padding: 8px 16px;
+                font-size: 0.9em;
+            }
+            
+            #legend {
+                font-size: 0.8em;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <!-- PWA Install Button -->
+    <button id="install-btn">📱 Zainstaluj aplikację</button>
+    
+    <!-- Status połączenia -->
+    <div id="connection-status"></div>
+    
+    <div id="info-panel">
+        <h2>System filtracji komory dygestoryjnej</h2>
+        <div class="filter-info" id="filter1">
+            <div class="filter-name">➀ Prefiltr mechaniczny G4/F7</div>
+            <div class="filter-desc">
+                Zatrzymuje cząstki > 1 µm<br>
+                Δp: 50-100 Pa<br>
+                Żywotność: ~12 miesięcy
+            </div>
+        </div>
+        <div class="filter-info" id="filter2">
+            <div class="filter-name">➁ Filtr węglowy CAN In-Line</div>
+            <div class="filter-desc">
+                Przepływ: 1000 m³/h (Ø200 mm)<br>
+                Adsorpcja LZO, oparów kwasów/zasad<br>
+                Powierzchnia węgla: ~1050 m²/g<br>
+                Żywotność: ≥18 miesięcy
+            </div>
+        </div>
+        <div class="filter-info" id="filter3">
+            <div class="filter-name">➂ Filtr HEPA H13</div>
+            <div class="filter-desc">
+                Wymiary: 305×305×292 mm<br>
+                Skuteczność: ≥99.95% MPPS<br>
+                Δp: ~250 Pa przy 500 m³/h
+            </div>
+        </div>
+        <div id="flow-info">Przepływ powietrza: <span id="flow-status">Zatrzymany</span></div>
+    </div>
+    
+    <div id="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background: #FF5722;"></div>
+            <span>Zanieczyszczone powietrze</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #FFC107;"></div>
+            <span>Częściowo oczyszczone</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #4CAF50;"></div>
+            <span>Czyste powietrze</span>
+        </div>
+    </div>
+    
+    <div id="controls">
+        <button onclick="toggleAnimation()">▶️ Start/Stop</button>
+        <button onclick="toggleRotation()">🔄 Obróć widok</button>
+        <button onclick="resetView()">🏠 Resetuj</button>
+        <button onclick="toggleFullscreen()">🔍 Pełny ekran</button>
+    </div>
+
+    <script>
+        let scene, camera, renderer;
+        let filters = [];
+        let particles = [];
+        let animationRunning = false;
+        let rotationEnabled = true;
+        let activeFilter = -1;
+        let deferredPrompt;
+        
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+        
+        // PWA Install Handler
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('install-btn').style.display = 'block';
+        });
+        
+        document.getElementById('install-btn').addEventListener('click', () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    }
+                    deferredPrompt = null;
+                    document.getElementById('install-btn').style.display = 'none';
+                });
+            }
+        });
+        
+        // Connection Status
+        function updateConnectionStatus() {
+            const statusEl = document.getElementById('connection-status');
+            if (navigator.onLine) {
+                statusEl.textContent = '🟢 Online';
+                statusEl.className = 'online';
+                statusEl.style.display = 'block';
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 2000);
+            } else {
+                statusEl.textContent = '🔴 Offline - Praca w trybie offline';
+                statusEl.className = 'offline';
+                statusEl.style.display = 'block';
+            }
+        }
+        
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+        
+        // Auto-start if URL parameter present
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('autostart') === 'true') {
+            setTimeout(() => {
+                toggleAnimation();
+            }, 1000);
+        }
+        
+        // Inicjalizacja sceny
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+            scene.fog = new THREE.Fog(0x1a1a1a, 10, 50);
+            
+            // Kamera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(15, 10, 20);
+            camera.lookAt(0, 0, 0);
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            
+            // Oświetlenie
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 20, 10);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.camera.left = -20;
+            directionalLight.shadow.camera.right = 20;
+            directionalLight.shadow.camera.top = 20;
+            directionalLight.shadow.camera.bottom = -20;
+            scene.add(directionalLight);
+            
+            // Stwórz system filtracji
+            createFiltrationSystem();
+            
+            // Obsługa zmiany rozmiaru okna
+            window.addEventListener('resize', onWindowResize, false);
+            
+            // Obsługa myszy
+            document.addEventListener('mousemove', onMouseMove, false);
+        }
+        
+        function createFiltrationSystem() {
+            // Podstawa
+            const baseGeometry = new THREE.BoxGeometry(20, 0.5, 8);
+            const baseMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            base.position.y = -5;
+            base.receiveShadow = true;
+            scene.add(base);
+            
+            // Kanał wlotowy
+            const inletGeometry = new THREE.CylinderGeometry(1.5, 1.5, 3);
+            const inletMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x666666,
+                transparent: true,
+                opacity: 0.8
+            });
+            const inlet = new THREE.Mesh(inletGeometry, inletMaterial);
+            inlet.position.set(-8, 0, 0);
+            inlet.rotation.z = Math.PI / 2;
+            scene.add(inlet);
+            
+            // Filtr 1 - Prefiltr mechaniczny
+            const filter1Geo = new THREE.BoxGeometry(3, 6, 6);
+            const filter1Mat = new THREE.MeshPhongMaterial({ 
+                color: 0x8BC34A,
+                transparent: true,
+                opacity: 0.7
+            });
+            const filter1 = new THREE.Mesh(filter1Geo, filter1Mat);
+            filter1.position.set(-4, 0, 0);
+            filter1.castShadow = true;
+            filters.push(filter1);
+            scene.add(filter1);
+            
+            // Siatka prefiltru
+            const gridGeometry = new THREE.PlaneGeometry(6, 6, 10, 10);
+            const gridMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xCDDC39,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.8
+            });
+            const grid = new THREE.Mesh(gridGeometry, gridMaterial);
+            grid.position.set(-2.4, 0, 0);
+            grid.rotation.y = Math.PI / 2;
+            scene.add(grid);
+            
+            // Filtr 2 - Filtr węglowy (cylindryczny)
+            const filter2Geo = new THREE.CylinderGeometry(2, 2, 8);
+            const filter2Mat = new THREE.MeshPhongMaterial({ 
+                color: 0x424242,
+                transparent: true,
+                opacity: 0.8
+            });
+            const filter2 = new THREE.Mesh(filter2Geo, filter2Mat);
+            filter2.position.set(0, 0, 0);
+            filter2.rotation.z = Math.PI / 2;
+            filter2.castShadow = true;
+            filters.push(filter2);
+            scene.add(filter2);
+            
+            // Granulki węgla aktywnego
+            const carbonGeometry = new THREE.SphereGeometry(0.1, 4, 4);
+            const carbonMaterial = new THREE.MeshPhongMaterial({ color: 0x212121 });
+            for (let i = 0; i < 50; i++) {
+                const carbon = new THREE.Mesh(carbonGeometry, carbonMaterial);
+                const angle = Math.random() * Math.PI * 2;
+                const radius = Math.random() * 1.8;
+                const height = (Math.random() - 0.5) * 7;
+                carbon.position.set(
+                    height,
+                    Math.sin(angle) * radius,
+                    Math.cos(angle) * radius
+                );
+                filter2.add(carbon);
+            }
+            
+            // Filtr 3 - HEPA
+            const filter3Geo = new THREE.BoxGeometry(3, 6, 6);
+            const filter3Mat = new THREE.MeshPhongMaterial({ 
+                color: 0x2196F3,
+                transparent: true,
+                opacity: 0.7
+            });
+            const filter3 = new THREE.Mesh(filter3Geo, filter3Mat);
+            filter3.position.set(4, 0, 0);
+            filter3.castShadow = true;
+            filters.push(filter3);
+            scene.add(filter3);
+            
+            // Struktura plisowana HEPA
+            const pleatsGroup = new THREE.Group();
+            for (let i = 0; i < 10; i++) {
+                const pleatGeo = new THREE.BoxGeometry(0.1, 5.5, 5.5);
+                const pleatMat = new THREE.MeshPhongMaterial({ 
+                    color: 0x64B5F6,
+                    side: THREE.DoubleSide
+                });
+                const pleat = new THREE.Mesh(pleatGeo, pleatMat);
+                pleat.position.x = (i - 5) * 0.25;
+                pleatsGroup.add(pleat);
+            }
+            pleatsGroup.position.set(4, 0, 0);
+            scene.add(pleatsGroup);
+            
+            // Kanał wylotowy
+            const outletGeometry = new THREE.CylinderGeometry(1.5, 1.5, 3);
+            const outlet = new THREE.Mesh(outletGeometry, inletMaterial);
+            outlet.position.set(8, 0, 0);
+            outlet.rotation.z = Math.PI / 2;
+            scene.add(outlet);
+            
+            // Strzałki kierunku przepływu
+            createFlowArrows();
+        }
+        
+        function createFlowArrows() {
+            const arrowGeometry = new THREE.ConeGeometry(0.5, 1.5);
+            const arrowMaterial = new THREE.MeshPhongMaterial({ color: 0x4CAF50 });
+            
+            const positions = [-6, -2, 2, 6];
+            positions.forEach(x => {
+                const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
+                arrow.position.set(x, -3, 0);
+                arrow.rotation.z = -Math.PI / 2;
+                scene.add(arrow);
+            });
+        }
+        
+        function createParticle(type) {
+            const geometry = new THREE.SphereGeometry(0.1);
+            let material;
+            
+            switch(type) {
+                case 'dirty':
+                    material = new THREE.MeshPhongMaterial({ 
+                        color: 0xFF5722,
+                        emissive: 0xFF5722,
+                        emissiveIntensity: 0.3
+                    });
+                    break;
+                case 'partial':
+                    material = new THREE.MeshPhongMaterial({ 
+                        color: 0xFFC107,
+                        emissive: 0xFFC107,
+                        emissiveIntensity: 0.3
+                    });
+                    break;
+                case 'clean':
+                    material = new THREE.MeshPhongMaterial({ 
+                        color: 0x4CAF50,
+                        emissive: 0x4CAF50,
+                        emissiveIntensity: 0.3
+                    });
+                    break;
+            }
+            
+            const particle = new THREE.Mesh(geometry, material);
+            particle.position.set(-10, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2);
+            particle.userData = { type: type, speed: 0.05 + Math.random() * 0.05 };
+            
+            return particle;
+        }
+        
+        function updateParticles() {
+            // Dodaj nowe cząsteczki
+            if (Math.random() < 0.3 && particles.length < 50) {
+                const particle = createParticle('dirty');
+                particles.push(particle);
+                scene.add(particle);
+            }
+            
+            // Aktualizuj pozycje cząsteczek
+            particles.forEach((particle, index) => {
+                particle.position.x += particle.userData.speed;
+                
+                // Zmiana typu cząsteczki po przejściu przez filtry
+                if (particle.position.x > -2.5 && particle.userData.type === 'dirty') {
+                    particle.userData.type = 'partial';
+                    particle.material.color.setHex(0xFFC107);
+                    particle.material.emissive.setHex(0xFFC107);
+                    // Niektóre cząsteczki są zatrzymywane przez prefiltr
+                    if (Math.random() < 0.3) {
+                        scene.remove(particle);
+                        particles.splice(index, 1);
+                        return;
+                    }
+                }
+                
+                if (particle.position.x > 2 && particle.userData.type === 'partial') {
+                    particle.userData.type = 'clean';
+                    particle.material.color.setHex(0x4CAF50);
+                    particle.material.emissive.setHex(0x4CAF50);
+                    // Niektóre cząsteczki są adsorbowane przez węgiel
+                    if (Math.random() < 0.4) {
+                        scene.remove(particle);
+                        particles.splice(index, 1);
+                        return;
+                    }
+                }
+                
+                // Usuń cząsteczki które wyszły z układu
+                if (particle.position.x > 10) {
+                    scene.remove(particle);
+                    particles.splice(index, 1);
+                }
+            });
+            
+            // Aktualizuj podświetlenie aktywnego filtru
+            const particleX = particles.length > 0 ? particles[0].position.x : -10;
+            if (particleX < -2.5) {
+                setActiveFilter(0);
+            } else if (particleX < 2) {
+                setActiveFilter(1);
+            } else if (particleX < 5.5) {
+                setActiveFilter(2);
+            } else {
+                setActiveFilter(-1);
+            }
+        }
+        
+        function setActiveFilter(index) {
+            if (activeFilter !== index) {
+                activeFilter = index;
+                // Aktualizuj panele informacyjne
+                document.querySelectorAll('.filter-info').forEach((el, i) => {
+                    el.classList.toggle('active', i === index);
+                });
+            }
+        }
+        
+        function toggleAnimation() {
+            animationRunning = !animationRunning;
+            document.getElementById('flow-status').textContent = 
+                animationRunning ? 'Aktywny' : 'Zatrzymany';
+        }
+        
+        function toggleRotation() {
+            rotationEnabled = !rotationEnabled;
+        }
+        
+        function resetView() {
+            camera.position.set(15, 10, 20);
+            camera.lookAt(0, 0, 0);
+        }
+        
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        function onMouseMove(event) {
+            if (!rotationEnabled) return;
+            
+            const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            const mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+            
+            camera.position.x = 15 * Math.cos(mouseX * Math.PI * 0.5);
+            camera.position.z = 20 * Math.sin(mouseX * Math.PI * 0.5);
+            camera.position.y = 10 + mouseY * 5;
+            camera.lookAt(0, 0, 0);
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (animationRunning) {
+                updateParticles();
+                
+                // Animuj filtry
+                filters.forEach((filter, index) => {
+                    if (index === 1) { // Filtr węglowy - obracaj
+                        filter.rotation.x += 0.001;
+                    }
+                });
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        // Start
+        init();
+        animate();
+    </script>
+</body>
+</html>

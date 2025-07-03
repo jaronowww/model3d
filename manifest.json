@@ -1,0 +1,97 @@
+{
+  "name": "System filtracji komory dygestoryjnej - wizualizacja 3D",
+  "short_name": "Filtracja 3D",
+  "description": "Interaktywna wizualizacja 3D systemu filtracji komory dygestoryjnej z trzema etapami oczyszczania powietrza",
+  "version": "1.0.0",
+  "manifest_version": 2,
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "landscape",
+  "theme_color": "#4CAF50",
+  "background_color": "#1a1a1a",
+  "scope": "./",
+  "lang": "pl",
+  "categories": ["education", "simulation", "science"],
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Uruchom symulację",
+      "short_name": "Symulacja",
+      "description": "Bezpośrednie uruchomienie symulacji filtracji",
+      "url": "./index.html?autostart=true",
+      "icons": [
+        {
+          "src": "icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-desktop.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Widok pulpitu symulacji filtracji"
+    },
+    {
+      "src": "screenshot-mobile.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Widok mobilny symulacji"
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "features": [
+    "3D visualization",
+    "Real-time simulation",
+    "Interactive controls",
+    "Educational content"
+  ]
+}
